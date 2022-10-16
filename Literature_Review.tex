@@ -17,6 +17,7 @@
 \newtheorem{property}{Property}
 \newtheorem{observation}{Observation}
 \newtheorem{fact}{Fact}
+\usepackage{natbib}
 \newenvironment{proof}           {\noindent{\bf Proof.} }%
                                  {\null\hfill$\Box$\par\medskip}
 %--------------- Algorithm --------------------------------------------------
@@ -70,28 +71,33 @@ Ottawa, Canada K1S 5B6\\
 
 \maketitle
 
-
-
 % ############################################################################
 \section{Introduction} \label{intro}
 % ############################################################################
 
-Introduce your project topic (start from parallel computing in
-general and lead to your particular topic). Describe what you
-intend to achieve in your project.
+Genetic algorithms are powerful metaheuristics that draw insipiration from evolutionary ideas. Through operations such as selection, cross-over and mutation, the solution space is "evolved" and more optimal results are found each iteration (generation). These algorithms are amenable to parallelization and indeed researchers have experimented with parallelizing everything from individual operators to the whole process. However, designing parallel algorithms can differ quite fundamentally given the underlying architecture. 
 
+Financial pattern discovery, MAX-3SAT, layout problems, ML hyperparameter selection \cite{} are but a few of the problems GPU GAs have been used to solve.
 
 % ############################################################################
 \section{Literature Review} \label{litrev}
 % ############################################################################
 
-Give an overview of the relevant literature. Cite all relevant
-papers, like \cite{DEL07}, \cite{PD07}, \cite{DER07}, \cite{LDR07},
-\cite{DLX06}, \cite{CDE06}, and \cite{DFL06}. Outline for each paper
-the relevant results in relation to your project. Make sure that you
-don't just list all relevant papers in random order. Devise a scheme
-to group papers by subject. The goal is to present to the reader the
-state-of-the-art in the field selected for your project.
+Using GPUs to accelerate Genetic Algorithms started to take off when NVIDIA released CUDA SDK 2.0 in 2008, allowing for more general programming tasks to be parallelized.  
+
+A first intuitive approach is to move an operator onto the GPU that can efficiently be ran in parallel, such as the fitness evaluation across a population \cite{Maitre2009-wd}. Taking this idea further, generation of chromosomes could also moved to the GPU \cite{Cavuoti2013-oy}. Unfortunately, this constant transfer between CPU and GPU at every generation slowed down the runtime, and depending on the population size, may not have even been worth it \cite{robilliard2008population}. 
+
+To overcome this transfer slowdown, master-slave models of a binary and real coded GAs were completely ported to the GPU \cite{Debattisti2009-su, Arora2010-ds}. Each operator (tournament selection, two-point and single point crossover, bitwise XOR mutation) became separate CUDA kernels. Both the crossover and mutation kernels in these cases suffered from the possibility of having the same chromosome operated on many times, causing inefficient usage and propagation of sub-optimal solutions.
+
+Because of the architectural and operational constraints of the GPU, such as limited shared memory and expensive global memory lookups, models that aimed to reduce global communication fared better. Inversely, these models seemed to have less overall accuracy \cite{Zheng2011-zr}, while other works found this difference non-existant \cite{jahne2016overview}. Further follow-ups to quality of solutions between models have not been explored.
+
+Island model GAs divide populations in the hope that diversity is preserved during evolution. On a GPU, this roughly translates to thread blocks as islands, and single threads to individuals. Within a block, fast memory access and synchronisation is available. Migration between islands occurs asynchronously.
+Early island model implementations \cite{Pospichal2010-lf, Van_Luong2010-mw} used global memory only for migration. They were applied to numerical and combinatorial optimisations problems with tremendous speed-ups recorded. These speed-ups unfortunately were due mainly to comparisons with poorly optimized sequential GAs \cite{Jaros2012-ni}. When compared against properly parallelized GAs on CPUs, the speed-up was more in line with expected theoretical analysis. A similar revision of speed-up was seen with newer master-slave implementations \cite{Sinha2015-dk}. Trade-offs between speed and solution quality were analyzed and associated to parameter tuning, specifically island, generation and chromosome counts \cite{Sun2019-fj}.
+
+During this time, research looking at optimizing GA GPU representations as well as technique improvements to leverage more parallelization was taking off. Building on the island model implementations, simulated annealing was shown to provide faster convergence when replacing mutation \cite{li2017parallel}. Memory layouts were also explored, and chromosome based layouts proved to increase locality and make better usage of caches \cite{jahne2016overview}. Different encoding representations also increased convergence speed at no detriment to solution quality \cite{Pedemonte2011-zu}. 
+
+Newer work incorporates some of these techniques, as well as developing new ones targeting Island models almost exclusively. Random seed improvement lead to a solution technique that only generates a single random seed, yet still benefits from the uniqueness and speed one would typically get by generating seeds every generation \cite{Sun2019-fj}. Another recent paper used the idea of synchronous migration intervals to improve solution quality by avoiding unintended migrations \cite{Janssen2022-kr}. This one in particular also used the idea of allocating multiple threads per individual \cite{shah2010gpu} combined with better data organization and found that their techniques provided up to 18x speedups and better solution quality compared to the original IMGAs on the same hardware.
+Newer work tries to use warp granularity to represent each island and reduce thread divergence \cite{Amin2022-xd}. They also perform synchronous and asynchronous replacement, improving solution quality, dubbing it Two-Replacement Policy. Unfortunately, these interesting island model changes were not compared to any prior island model implementations.
 
 
 % ############################################################################

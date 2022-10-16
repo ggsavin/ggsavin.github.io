@@ -1,3 +1,44 @@
+@inproceedings{robilliard2008population,
+  title={Population parallel GP on the G80 GPU},
+  author={Robilliard, Denis and Marion-Poty, Virginie and Fonlupt, Cyril},
+  booktitle={European Conference on Genetic Programming},
+  pages={98--109},
+  year={2008},
+  organization={Springer}
+} --------------------------------------------
+
+@INPROCEEDINGS{Maitre2009-wd,
+  title     = "Coarse grain parallelization of evolutionary algorithms on
+               {GPGPU} cards with {EASEA}",
+  booktitle = "Proceedings of the 11th Annual conference on Genetic and
+               evolutionary computation",
+  author    = "Maitre, Ogier and Baumes, Laurent A and Lachiche, Nicolas and
+               Corma, Avelino and Collet, Pierre",
+  abstract  = "This paper presents a straightforward implementation of a
+               standard evolutionary algorithm that evaluates its population in
+               parallel on a GPGPU card.Tests done on a benchmark and a real
+               world problem using an old NVidia 8800GTX card and a newer but
+               not top of the range GTX260 card show a roughly 30x (resp. 100x)
+               speedup for the whole algorithm compared to the same algorithm
+               running on a standard 3.6GHz PC. Knowing that much faster
+               hardware is already available, this opens new horizons to
+               evolutionary computation, as search spaces can now be explored 2
+               or 3 orders of magnitude faster, depending on the number of used
+               GPGPU cards.Since these cards remains very difficult to program,
+               the knowhow has been integrated into the old EASEA language,
+               that can now output code for GPGPU (-cuda option).",
+  publisher = "Association for Computing Machinery",
+  pages     = "1403--1410",
+  series    = "GECCO '09",
+  month     =  jul,
+  year      =  2009,
+  address   = "New York, NY, USA",
+  keywords  = "genetic algorithms, gpgpu, gpu, graphic processing unit,
+               parallelization, many-core, easea, multi-core, evolutionary
+               computation",
+  location  = "Montreal, Qu{\'e}bec, Canada"
+} -------------------------------------------
+
 @INPROCEEDINGS{Pospichal2010-lf,
   title     = "Parallel Genetic Algorithm on the {CUDA} Architecture",
   booktitle = "Applications of Evolutionary Computation",
@@ -42,3 +83,328 @@
   keywords  = "gpu, parallel, island model",
   location  = "Portland, Oregon, USA"
 } -------------------------------------
+
+
+@ARTICLE{Debattisti2009-su,
+  title   = "Implementation of a simple genetic algorithm within the cuda
+             architecture",
+  author  = "{Debattisti} and {Marlat} and {Mussi} and {others}",
+  journal = "The Genetic and",
+  year    =  2009
+} -------------------------------------
+
+
+
+@ARTICLE{Janssen2022-kr,
+  title     = "Graphics processing unit acceleration of the island model
+               genetic algorithm using the {CUDA} programming platform",
+  author    = "Janssen, Dylan M and Pullan, Wayne and Liew, Alan Wee-Chung",
+  abstract  = "Abstract Genetic algorithms are a practical approach for finding
+               near-optimal solutions for nondeterministic polynomial-hard
+               problems. In this work we exploit the parallel processing
+               capability of graphics processing units and Nvidia's CUDA
+               programming platform to accelerate the island model genetic
+               algorithm by modifying the evolutionary operations to fit the
+               hardware architecture and have successfully achieved significant
+               computational speedups.",
+  journal   = "Concurr. Comput.",
+  publisher = "Wiley",
+  volume    =  34,
+  number    =  2,
+  month     =  jan,
+  year      =  2022,
+  copyright = "http://onlinelibrary.wiley.com/termsAndConditions\#vor",
+  language  = "en"
+} -----------------------------------------
+
+
+@INCOLLECTION{Cavuoti2013-oy,
+  title     = "Genetic Algorithm Modeling with {GPU} Parallel Computing
+               Technology",
+  booktitle = "Neural Nets and Surroundings: 22nd Italian Workshop on Neural
+               Nets, {WIRN} 2012, May 17-19, Vietri sul Mare, Salerno, Italy",
+  author    = "Cavuoti, Stefano and Garofalo, Mauro and Brescia, Massimo and
+               Pescape', Antonio and Longo, Giuseppe and Ventre, Giorgio",
+  editor    = "Apolloni, Bruno and Bassis, Simone and Esposito, Anna and
+               Morabito, Francesco Carlo",
+  abstract  = "We present a multi-purpose genetic algorithm, designed and
+               implemented with GPGPU / CUDA parallel computing technology. The
+               model was derived from a multi-core CPU serial implementation,
+               named GAME, already scientifically successfully tested and
+               validated on astrophysical massive data classification problems,
+               through a web application resource (DAMEWARE), specialized in
+               data mining based on Machine Learning paradigms. Since genetic
+               algorithms are inherently parallel, the GPGPU computing paradigm
+               has provided an exploit of the internal training features of the
+               model, permitting a strong optimization in terms of processing
+               performances and scalability.",
+  publisher = "Springer Berlin Heidelberg",
+  pages     = "29--39",
+  year      =  2013,
+  address   = "Berlin, Heidelberg"
+} ----------------------------------------------
+
+@article{shah2010gpu,
+  title={GPU-accelerated genetic algorithms},
+  author={Shah, Rajvi and Narayanan, P and Kothapalli, Kishore},
+  journal={cvit. iiit. ac. in},
+  year={2010}
+} ---------------------------------------------
+
+@INPROCEEDINGS{Pedemonte2011-zu,
+  title     = "Bitwise operations for {GPU} implementation of genetic
+               algorithms",
+  booktitle = "Proceedings of the 13th annual conference companion on Genetic
+               and evolutionary computation",
+  author    = "Pedemonte, Mart{\'\i}n and Alba, Enrique and Luna, Francisco",
+  abstract  = "Research on the implementation of evolutionary algorithms in
+               graphics processing units (GPUs) has grown in recent years since
+               it significantly reduces the execution time of the algorithm. A
+               relevant aspect, which has received little attention in the
+               literature, is the impact of the memory space occupied by the
+               population in the performance of the algorithm, due to limited
+               capacity of several memory spaces in the GPUs. In this paper we
+               analyze the differences in performance of a binary Genetic
+               Algorithm implemented on a GPU using a boolean data type or
+               packing multiple bits into a non boolean data type. Our study
+               considers the influence on the performance of single point and
+               double point crossover for solving the classical One-Max
+               problem. The results obtained show that packing bits for storing
+               binary strings can reduce the execution time up to 50\%.",
+  publisher = "Association for Computing Machinery",
+  pages     = "439--446",
+  series    = "GECCO '11",
+  month     =  jul,
+  year      =  2011,
+  address   = "New York, NY, USA",
+  keywords  = "cuda, gpu, parallelization, gpgpu, evolutionary computation,
+               binary-coded genetic algorithm",
+  location  = "Dublin, Ireland"
+} --------------------------------------------------
+
+
+@INPROCEEDINGS{Zheng2011-zr,
+  title     = "Architecture-based Performance Evaluation of Genetic Algorithms
+               on {Multi/Many-core} Systems",
+  booktitle = "2011 14th {IEEE} International Conference on Computational
+               Science and Engineering",
+  author    = "Zheng, Long and Lu, Yanchao and Ding, Mengwei and Shen, Yao and
+               Guoz, Minyi and Guo, Song",
+  abstract  = "A Genetic Algorithm (GA) is a heuristic to find exact or
+               approximate solutions to optimization and search problems within
+               an acceptable time. We discuss GAs from an architectural
+               perspective, offering a general analysis of GAs on multi-core
+               CPUs and on GPUs, with solution quality considered. We describe
+               widely-used parallel GA schemes based on Master-Slave, Island
+               and Cellular models. Then, based on the multi-core and many-core
+               architectures, especially the thread organization, memory
+               hierarchy, and core utilization, we analyze the execution speed
+               and solution quality of different GA schemes theoretically.
+               Finally, we can point to the best approach to use on multi-core
+               and many-core systems to execute GAs, so that we can obtain the
+               highest quality solution at a cost of the shortest execution
+               time. Furthermore, there are three extra contributions. Firstly,
+               during our analysis and evaluation, we not only focus on the
+               execution speed of different schemes, but also take the solution
+               quality into account, so that our findings will be more useful
+               in practice. Secondly, during our optimization of an Island
+               scheme on GPUs, we find that the GPU architecture actually
+               alters the scheme, making it become the Cellular scheme, which
+               leads to big changes in solution quality and optimization
+               results. Finally, we calculate the GPU speedup based on a
+               comparison between the best scheme on a GPU and the best one on
+               a CPU, rather than between an optimized one on the GPU and the
+               worst one on a CPU, so that the speedup we calculate is more
+               reasonable and a better guide to practical decisions.",
+  pages     = "321--334",
+  month     =  aug,
+  year      =  2011,
+  keywords  = "Scientific computing;Conferences"
+} ------------------------------------------------------
+
+
+@article{jahne2016overview,
+  title={Overview of the current state of research on parallelisation of evolutionary algorithms on graphic cards},
+  author={J{\"a}hne, Paul},
+  journal={Informatik 2016},
+  year={2016},
+  publisher={Gesellschaft f{\"u}r Informatik eV}
+} ----------------------------------------------------------
+
+
+@INPROCEEDINGS{Arora2010-ds,
+  title     = "Parallelization of binary and real-coded genetic algorithms on
+               {GPU} using {CUDA}",
+  booktitle = "{IEEE} Congress on Evolutionary Computation",
+  author    = "Arora, Ramnik and Tulshyan, Rupesh and Deb, Kalyanmoy",
+  abstract  = "Genetic Algorithms(GAs) are suitable for parallel computing
+               since population members fitness maybe evaluated in parallel.
+               Most past parallel GA studies have exploited this aspect,
+               besides resorting to different algorithms, such as island,
+               single-population master-slave, fine-grained and hybrid models.
+               A GA involves a number of other operations which, if
+               parallelized, may lead to better parallel GA implementation than
+               those currently existing. In this paper, we parallelize binary
+               and real-coded genetic algorithms using CUDA API's with C.
+               Although, objective and constraint violations evaluations are
+               embarassingly parallel, other algorithmic and code optimizations
+               have been proposed and tested. The bottlenecks in a parallel GA
+               implementation are identified and modified suitably. The results
+               are compared with the sequential algorithm on accuracy and clock
+               time for varying problems by studying the effect of a number of
+               parameters, namely: (i) population sizes, (ii) number of
+               threads, (iii) problem sizes, and (iv) problems of differing
+               complexities. Significant speed-ups have been observed over the
+               sequential GA.",
+  pages     = "1--8",
+  month     =  jul,
+  year      =  2010,
+  keywords  = "Instruction sets;Graphics processing unit;Arrays;Kernel;Random
+               number generation;Optimization;Biological cells"
+} --------------------------------------------------------
+
+
+@INPROCEEDINGS{Jaros2012-ni,
+  title     = "A Fair Comparison of Modern {CPUs} and {GPUs} Running the
+               Genetic Algorithm under the Knapsack Benchmark",
+  booktitle = "Applications of Evolutionary Computation",
+  author    = "Jaros, Jiri and Pospichal, Petr",
+  abstract  = "The paper introduces an optimized multicore CPU implementation
+               of the genetic algorithm and compares its performance with a
+               fine-tuned GPU version. The main goal is to show the true
+               performance relation between modern CPUs and GPUs and eradicate
+               some of myths surrounding GPU performance. It is essential for
+               the evolutionary community to provide the same conditions and
+               designer effort to both implementations when benchmarking CPUs
+               and GPUs. Here we show the performance comparison supported by
+               architecture characteristics narrowing the performance gain of
+               GPUs.",
+  publisher = "Springer Berlin Heidelberg",
+  pages     = "426--435",
+  year      =  2012
+} --------------------------
+
+
+@INPROCEEDINGS{Sinha2015-dk,
+  title     = "Speedup Genetic Algorithm Using {C-CUDA}",
+  booktitle = "2015 Fifth International Conference on Communication Systems and
+               Network Technologies",
+  author    = "Sinha, Rashmi Sharan and Singh, Satvir and Singh, Sarabjeet and
+               Banga, Vijay Kumar",
+  abstract  = "Genetic Algorithm (GA) is one of most popular swarm based
+               evolutionary search algorithm that involves multiple data
+               independent computations. Such computations can be made parallel
+               on GPU cores using Compute Unified Design Architecture (CUDA)
+               platform. In this paper, various operations of GA such as
+               fitness evaluation, selection, crossover and mutation, etc. Are
+               implemented in parallel on GPU cores and then performance is
+               compared with its serial implementation. The algorithm
+               performance in serial and in parallel implementations are
+               examined on a test bed of well-known benchmark optimization
+               functions. The performances are analyzed with varying parameters
+               viz. (i)population sizes, (ii) dimensional sizes, and (iii)
+               problems of differing complexities. Results shows that the
+               overall computational time can substantially be decreased by
+               parallel implementation on GPU cores. The proposed
+               implementations resulted in 1.18 to 4.15 times faster than the
+               corresponding serial implementation on CPU.",
+  pages     = "1355--1359",
+  month     =  apr,
+  year      =  2015,
+  keywords  = "Graphics processing units;Genetic algorithms;Instruction
+               sets;Sociology;Statistics;Kernel;Biological cells;Genetic
+               Algorithm (GA);General Purpose Computing on Graphics Processing
+               Unit (GPGPU);Compute Unified Device Architecture (CUDA)"
+}----------------------------
+
+@article{li2017parallel,
+  title={Parallel genetic algorithms on the graphics processing units using island model and simulated annealing},
+  author={Li, Cheng-Chieh and Lin, Chu-Hsing and Liu, Jung-Chun},
+  journal={Advances in Mechanical Engineering},
+  volume={9},
+  number={7},
+  pages={1687814017707413},
+  year={2017},
+  publisher={SAGE Publications Sage UK: London, England}
+} --------------------
+
+
+@ARTICLE{Sun2019-fj,
+  title     = "{Quality-Oriented} Study on Mapping Island Model Genetic
+               Algorithm onto {CUDA} {GPU}",
+  author    = "Sun, Xue and Chou, Ping and Wu, Chao-Chin and Chen, Liang-Rui",
+  abstract  = "Genetic algorithm (GA), a global search method, has widespread
+               applications in various fields. One very promising variant model
+               of GA is the island model GA (IMGA) that introduces the key idea
+               of migration to explore a wider search space. Migration will
+               exchange chromosomes between islands, resulting in
+               better-quality solutions. However, IMGA takes a long time to
+               solve the large-scale NP-hard problems. In order to shorten the
+               computation time, modern graphic process unit (GPU), as
+               highly-parallel architecture, has been widely adopted in order
+               to accelerate the execution of NP-hard algorithms. However, most
+               previous studies on GPUs are focused on performance only,
+               because the found solution qualities of the CPU and the GPU
+               implementation of the same method are exactly the same.
+               Therefore, it is usually previous work that did not report on
+               quality. In this paper, we investigate how to find a better
+               solution within a reasonable time when parallelizing IMGA on
+               GPU, and we take the UA-FLP as a study example. Firstly, we
+               propose an efficient approach of parallel tournament selection
+               operator on GPU to achieve a better solution quality in a
+               shorter amount of time. Secondly, we focus on how to tune three
+               important parameters of IMGA to obtain a better solution
+               efficiently, including the number of islands, the number of
+               generations, and the number of chromosomes. In particular,
+               different parameters have a different impact on solution quality
+               improvement and execution time increment. We address the
+               challenge of how to trade off between solution quality and
+               execution time for these parameters. Finally, experiments and
+               statistics are conducted to help researchers set parameters more
+               efficiently to obtain better solutions when GPUs are used to
+               accelerate IMGA. It has been observed that the order of
+               influence on solution quality is: The number of chromosomes, the
+               number of generations, and the number of islands, which can
+               guide users to obtain better solutions efficiently with moderate
+               increment of execution time. Furthermore, if we give higher
+               priority on reducing execution time on GPU, the quality of the
+               best solution can be improved by about 3\%, with an acceleration
+               that is 29 times faster than the CPU counterpart, after applying
+               our suggested parameter settings. However, if we give solution
+               quality a higher priority, i.e., the GPU execution time is close
+               to the CPU's, the solution quality can be improved up to 8\%.",
+  journal   = "Symmetry",
+  publisher = "Multidisciplinary Digital Publishing Institute",
+  volume    =  11,
+  number    =  3,
+  pages     = "318",
+  month     =  mar,
+  year      =  2019,
+  language  = "en"
+} --------------------------------
+
+
+@INPROCEEDINGS{Amin2022-xd,
+  title     = "{Two-Replacements} Policy Island Model on {GPU}",
+  booktitle = "Advances in Swarm Intelligence",
+  author    = "Amin, Faiza and Li, Jinlong",
+  abstract  = "The island model is one technique to tackle complex and critical
+               difficulties of evolutionary algorithms. This paper will design
+               a two-replacements policy and warp-based island mapping
+               mechanism in TRPIM with ring topology on GPU Nvidia's CUDA
+               programming. Each thread in the warp-based island executes the
+               same instruction sequence in parallel to eliminate thread
+               divergence. The two-replacement policy would replace the worse
+               individuals with the better ones asynchronously and
+               synchronously, reducing the waiting duration. We conduct
+               experiments on the knapsack problem to verify the warp-based
+               island mapping mechanism's effectiveness and two-replacement
+               policy in TRPIM. And the results show that the proposed TRPIM
+               improves the speedup time and solution quality on the GPU
+               version compared to the CPU.",
+  publisher = "Springer International Publishing",
+  pages     = "242--253",
+  year      =  2022
+} ----------------------------------------------
+
+
