@@ -1,0 +1,16 @@
+ Time (%)  Total Time (ns)  Instances  Avg (ns)   Med (ns)   Min (ns)  Max (ns)  StdDev (ns)                                  Name                                
+ --------  ---------------  ---------  ---------  ---------  --------  --------  -----------  --------------------------------------------------------------------
+     83.1      920,536,735      5,994  153,576.4   83,409.5    22,240   476,965    156,371.5  GPUreproduceChromosomes(chromosome *, chromosome *, int *, int, int)
+      8.7       96,057,554      6,000   16,009.6   12,320.0    11,520    31,713      6,930.5  evaluateChromosomes(chromosome *, int *, int *, int, int)           
+      6.5       71,702,476      6,000   11,950.4   11,872.0    11,776    13,856        182.3  pullScores(chromosome *, int *)                                     
+      1.4       15,998,624      6,000    2,666.4    2,624.0     2,464    13,184        409.8  void reduceCUDA<(unsigned long)1024, int>(T2 *, T2 *, unsigned long)
+      0.2        2,320,024          6  386,670.7  343,779.5   268,803   611,271    126,149.6  initializeChromosomes(chromosome *, int *, int, int)                
+      0.1        1,613,520          6  268,920.0  190,818.0   143,489   608,454    179,423.7  initKernel(int)   
+
+
+Looks like the below are the timings for mutation and crossover.
+Roulette isnt too bad.
+
+Timing Roulette Avg : 1.16264
+Timing Crossover Avg : 3.02573
+Timiing Mutation Avg : 5.30239
