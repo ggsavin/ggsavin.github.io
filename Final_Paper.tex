@@ -6,6 +6,18 @@
 % ===========================================================================
 \documentclass[11pt]{article}       %--- LATEX 2e base
 \usepackage{latexsym}               %--- LATEX 2e base
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+\usepackage{booktabs}
+\usepackage{graphicx}
+%---------------- Tikz Flow D -----------------------------------------------
+
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
 %---------------- Wide format -----------------------------------------------
 \textwidth=6in \textheight=9in \oddsidemargin=0.25in
 \evensidemargin=0.25in \topmargin=-0.5in
@@ -17,6 +29,7 @@
 \newtheorem{property}{Property}
 \newtheorem{observation}{Observation}
 \newtheorem{fact}{Fact}
+\usepackage{natbib}
 \newenvironment{proof}           {\noindent{\bf Proof.} }%
                                  {\null\hfill$\Box$\par\medskip}
 %--------------- Algorithm --------------------------------------------------
@@ -52,18 +65,18 @@
 % Title
 % ############################################################################
 
-\title{Parallel Genetic Algorithms on a GPU}
+\title{Parallel Genetic Algorithms on the GPU}
 
 
 % ############################################################################
 % Author(s) (no blank lines !)
 \author{
 % ############################################################################
-John Doe\\
+George Savin\\
 School of Computer Science\\
 Carleton University\\
 Ottawa, Canada K1S 5B6\\
-{\em John-Doe@scs.carleton.ca}
+{\em georgesavin@cmail.carleton.ca}
 % ############################################################################
 } % end-authors
 % ############################################################################
@@ -74,100 +87,107 @@ Ottawa, Canada K1S 5B6\\
 % Abstract
 % ############################################################################
 \begin{abstract}
-A very concise summary of the problem addressed and solution presented in this paper.
+Genetic Algorithms are very powerful metaheuristics that have been successfully applied in 
+various disparate fields. While there are many sequential parts to the algorithm, a fair amount
+can and has been parallelized in MIMD and SIMD fashion. In this paper, we show a SIMD GPU solution to the the knapsack combinatorial problem. We do everything, including initialization of data on the device rather than the host CPU and show speed improvements across the board.
 \end{abstract}
-
 
 % ############################################################################
 \section{Introduction} \label{intro}
 % ############################################################################
 
-Introduce your project topic (start from parallel computing in
-general and lead to your particular topic). Describe your project
-goals. Describe what you have achieved in your project. Outline
-the structure of your paper: In Section~\ref{litrev}, we will
-review the relevant literature.  ...
-Section~\ref{concl} concludes the paper.
-
-%% All essential elements of modern genetic algorithms were included in the book
-%% by Fraser and Burnell (1970) [9]. Goldberg (1989) first used genetic algorithm
-%% to solve the traveling salesman problem [10].
-%% uhlenbein (1989) brought up the concept of PGA (parallel genetic algorithm) [11], which aimed to implement GA on computer clusters. Ismail
-%% (2004) implemented PGA using MPI library [12]  Stefano et al. (2009) presented a paper about implementing
-%% CUDA-Based Genetic Algorithm on Traveling Salesman Problem 251
-%% a simple GA with CUDA architecture, where sequential code for same algorithm was taken for comparison [6]. Another paper from Petr Pospicha and
-%% Jiri (2009) presented a new PGA and implemented it on CUDA [13]
-
-
+Genetic algorithms are powerful metaheuristics that draw insipiration from evolutionary ideas. Through operations such as selection, cross-over and mutation, the solution space is "evolved" and more optimal results are found each iteration (generation). These algorithms are amenable to parallelization and indeed researchers have experimented with parallelizing everything from individual operators to the whole process. However, designing parallel algorithms can differ quite fundamentally given the underlying architecture. 
+Empirical and experimental researchers have predominantly been the drivers of GAs, mainly as optimization tools. 
+Only two main components for most GAs that are problem specific : encoding and evaluation.
+Financial pattern discovery, MAX-3SAT, layout problems, ML hyperparameter selection \cite{} are but a few of the problems GPU GAs have been used to solve.
 
 % ############################################################################
 \section{Literature Review} \label{litrev}
 % ############################################################################
 
-Give an overview of the relevant literature. Cite all relevant
-papers, like \cite{DEL07}, \cite{PD07}, \cite{DER07}, \cite{LDR07},
-\cite{DLX06}, \cite{CDE06}, and \cite{DFL06}. Outline for each paper
-the relevant results in relation to your project. Make sure that you
-don't just list all relevant papers in random order. Devise a scheme
-to group papers by subject. The goal of this section is to present
-to the reader the state-of-the-art in the field selected for your
-project.
+Using GPUs to accelerate Genetic Algorithms started to take off when NVIDIA released CUDA SDK 2.0 in 2008, allowing for more general programming tasks to be parallelized.  
+
+A first intuitive approach is to move an operator onto the GPU that can efficiently be ran in parallel, such as the fitness evaluation across a population \cite{Maitre2009-wd}. Taking this idea further, generation of chromosomes could also moved to the GPU \cite{Cavuoti2013-oy}. Unfortunately, this constant transfer between CPU and GPU at every generation slowed down the runtime, and depending on the population size, may not have even been worth it \cite{robilliard2008population}. 
+
+To overcome this transfer slowdown, master-slave models of a binary and real coded GAs were completely ported to the GPU \cite{Debattisti2009-su, Arora2010-ds}. Each operator (tournament selection, two-point and single point crossover, bitwise XOR mutation) became separate CUDA kernels. Both the crossover and mutation kernels in these cases suffered from the possibility of having the same chromosome operated on many times, causing inefficient usage and propagation of sub-optimal solutions.
+
+Because of the architectural and operational constraints of the GPU, such as limited shared memory and expensive global memory lookups, models that aimed to reduce global communication fared better. Inversely, these models seemed to have less overall accuracy \cite{Zheng2011-zr}, while other works found this difference non-existant \cite{jahne2016overview}. Further follow-ups to quality of solutions between models have not been explored.
+
+Island model GAs divide populations in the hope that diversity is preserved during evolution. On a GPU, this roughly translates to thread blocks as islands, and single threads to individuals. Within a block, fast memory access and synchronisation is available. Migration between islands occurs asynchronously.
+Early island model implementations \cite{Pospichal2010-lf, Van_Luong2010-mw} used global memory only for migration. They were applied to numerical and combinatorial optimisations problems with tremendous speed-ups recorded. These speed-ups unfortunately were due mainly to comparisons with poorly optimized sequential GAs \cite{Jaros2012-ni}. When compared against properly parallelized GAs on CPUs, the speed-up was more in line with expected theoretical analysis. A similar revision of speed-up was seen with newer master-slave implementations \cite{Sinha2015-dk}. Trade-offs between speed and solution quality were analyzed and associated to parameter tuning, specifically island, generation and chromosome counts \cite{Sun2019-fj}.
+
+During this time, research looking at optimizing GA GPU representations as well as technique improvements to leverage more parallelization was taking off. Building on the island model implementations, simulated annealing was shown to provide faster convergence when replacing mutation \cite{li2017parallel}. Memory layouts were also explored, and chromosome based layouts proved to increase locality and make better usage of caches \cite{jahne2016overview}. Different encoding representations also increased convergence speed at no detriment to solution quality \cite{Pedemonte2011-zu}. 
+
+Newer work incorporates some of these techniques, as well as developing new ones targeting Island models almost exclusively. Random seed improvement lead to a solution technique that only generates a single random seed, yet still benefits from the uniqueness and speed one would typically get by generating seeds every generation \cite{Sun2019-fj}. Another recent paper used the idea of synchronous migration intervals to improve solution quality by avoiding unintended migrations \cite{Janssen2022-kr}. This one in particular also used the idea of allocating multiple threads per individual \cite{shah2010gpu} combined with better data organization and found that their techniques provided up to 18x speedups and better solution quality compared to the original IMGAs on the same hardware.
+Newer work tries to use warp granularity to represent each island and reduce thread divergence \cite{Amin2022-xd}. They also perform synchronous and asynchronous replacement, improving solution quality, dubbing it Two-Replacement Policy. Unfortunately, these interesting island model changes were not compared to any prior island model implementations.
 
 % ############################################################################
-\section{Problem Statement} \label{problemStatement}
+\section{Problem Statement} \label{probstat}
 % ############################################################################
-
-\begin{enumerate}
-\item A concise statement of the question that your paper tackles.
-\item Justification, by direct reference to your Literature Review, that your question is previously unanswered.
-\item Discussion of why it is worthwhile to answer this question.
-\end{enumerate}
-
-% ############################################################################
-\section{Proposed Solution: ...} \label{proposedSolution}
-% ############################################################################
-
-This part of the paper is much more free-form. It may have one or several sections and subsections. But it all has only one purpose: to convince the reader that you answered the question or solved the problem that you set for yourself. In this section you will for example present new algorithms you developed and your implementation of these new algorithms.
-
- Figure~\ref{fig2} is an example
-of a drawing created with {\em mdraw} or {\em epsfig}.
-
-\includeFig{fig2}{Figures/figure-2}{XYZ and Hilbert Packings}
-% usage: \includeFig{label}{file}{caption}
-
-% ############################################################################
-\section{Experimental Evaluation} \label{expEval}
-% ############################################################################
-
-This section is not mandatory for all papers (for example theory papers) but typically required for papers in the field of parallel computing. After all, parallel computing is all about compute performance. Here you present performance data obtained from e.g. running your newly developed algorithms and code on a parallel machine using some benchmark input data. Typically, you need to describe the parallel machine you used and the data that you used as input. The main results are usually performance graphs, typically speedup curves. You want to evaluate your code on different input data sets highlighting the strengths and weaknesses of your code. Don’t just use best case scenarios. People will call you on that. Discuss the results obtained.
-
- Figure~\ref{fig1} is a
-typical example of an experimental evaluation result. Such graphs
-are ususally created with GnuPlot.
-
-\includeFig{fig1}{Figures/figure-1}{Measured Running Times
-Of Some Unknown Algorithm Implementation}
-% usage: \includeFig{label}{file}{caption}
 
 
 
 % ############################################################################
-\section{Conclusions} \label{concl}
+\section{Background} \label{backg}
 % ############################################################################
 
-You generally cover three things in the Conclusions section.
-\begin{enumerate}
-\item Conclusions
-\item Summary of Contributions
-\item Future Research
-\end{enumerate}
+\subsection{Genetic Algorithms}
+\subsection{GPU Programming}
 
-Conclusions are not a rambling summary of the thesis: they are short, concise statements of the inferences that you have made because of your work. All conclusions should be directly related to the research question.
+% ############################################################################
+\section{Proposed Solution} \label{propsol}
+% ############################################################################
+\subsection{CPU}
 
-The Summary of Contributions will be much sought and carefully read by the readers. Here you list the contributions of new knowledge that your paper makes. Of course, the paper itself must substantiate any claims made here. There is often some overlap with the Conclusions, but that’s okay.
+\begin{tikzpicture}[node distance=2cm]
+\node (start) [startstop] {Start};
+\node (in1) [io, below of=start] {Input};
+\node (pro1) [process, below of=in1] {Process 1};
+\node (dec1) [decision, below of=pro1, yshift=-0.5cm] {Decision 1};
 
-The Future Research should indicate interesting new problems arising from your work. No paper ever solves everything. In fact, the best research papers lead to new research questions for other researchers to work on.
+\end{tikzpicture}
 
+
+\subsection{GPU}
+
+
+% ############################################################################
+\section{Experimental Evaluation} \label{expeval}
+% ############################################################################
+
+\begin{table}[]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Time (\%) & Total Time (ns) & Instances & Avg (ns)  & Name of Kernel          \\ \midrule
+83.1      & 920,536,735     & 5,994     & 153,576.4 & GPUreproduceChromosomes \\
+8.7       & 96,057,554      & 6,000     & 16,009.6  & evaluateChromosomes     \\
+6.5       & 71,702,476      & 6,000     & 11,950.4  & pullScores              \\
+1.4       & 15,998,624      & 6,000     & 2,666.4   & reduce                  \\
+0.2       & 2,320,024       & 6         & 386,670.7 & initializeChromosomes   \\
+0.1       & 1,613,520       & 6         & 268,920.0 & initKernel              \\ \bottomrule
+\end{tabular}%
+}
+\caption{nsys profile of a 1000 generation GPU run}
+\label{tab:gpu-profile}
+\end{table}
+
+\begin{table}[]
+\begin{tabular}{@{}ll@{}}
+\toprule
+Call in Reproduction Kernel & Time (\%) \\ \midrule
+Roulette Selection          & 12.2     \\
+Crossover                   & 31.8     \\
+Mutation                    & 56       \\ \bottomrule
+\end{tabular}
+\caption{The three device functions representing the majority of the work done in the reproduction kernel}
+\label{tab:rep-kernel-breakdown}
+\end{table}
+
+% ############################################################################
+\section{Conclusions} \label{conc}
+% ############################################################################
 
 % ############################################################################
 % Bibliography

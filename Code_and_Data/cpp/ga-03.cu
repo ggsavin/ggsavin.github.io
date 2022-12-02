@@ -12,11 +12,11 @@
 #include<math.h>
 #include<curand_kernel.h>
 
-const int GENERATIONS = 2;
-const int NUM_OF_CHROMOSOMES = 5;
+const int GENERATIONS = 600;
+const int NUM_OF_CHROMOSOMES = 1024;
 const float ELITEISM = 0.1; 
 
-__device__ const int CHROMOSOME_COUNT = 5;
+__device__ const int CHROMOSOME_COUNT = 1024;
 __device__ curandState_t* states[NUM_OF_CHROMOSOMES];
 
 struct chromosome {
@@ -286,7 +286,7 @@ int main() {
 
     // read or get the weights, values and max_weight for the problem somehow
     std::fstream input_data;
-    input_data.open("data/ga-input-test.txt", std::ios_base::in);
+    input_data.open("data/test_1000.txt", std::ios_base::in);
     if (!input_data) {
         std::cout << " File does not exist! " << std::endl;
     } else {
@@ -384,17 +384,17 @@ int main() {
          // int tot  = GPUReduction<1024>(chromosomes, NUM_OF_CHROMOSOMES);
         cudaDeviceSynchronize();
 
-        for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
-            // std::cout << "Chromosome " << i << " score - " << chromosomes[i].score << " : ";
-            std::cout << "Chromosome " << i << " score - " << scores[i] << " : ";
-            for (int j = 0; j < numberOfItems; j++) {
-                std::cout << chromosomes[i].genes[j];
-            }
-            std::cout << "\n";
-        }
-        if (i % 10 == 0)
-            std::cout << "Generation " << i << " || Total : " << total <<  "\n";
-            //std::cout << "Generation " << i << " || Top : " << best << " || Avg : " << average << "\n";
+        // for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+        //     // std::cout << "Chromosome " << i << " score - " << chromosomes[i].score << " : ";
+        //     std::cout << "Chromosome " << i << " score - " << scores[i] << " : ";
+        //     for (int j = 0; j < numberOfItems; j++) {
+        //         std::cout << chromosomes[i].genes[j];
+        //     }
+        //     std::cout << "\n";
+        // }
+        // if (i % 10 == 0)
+        //     std::cout << "Generation " << i << " || Total : " << total <<  "\n";
+        //     //std::cout << "Generation " << i << " || Top : " << best << " || Avg : " << average << "\n";
     }
     
 
