@@ -22,6 +22,7 @@ __device__ curandState_t* states[1024];
 
 struct chromosome {
     int score;
+    int weight;
     int* genes;
 };
 
@@ -35,17 +36,6 @@ void checkCUDAError(const char *msg)
         fprintf(stderr, "CUDA Error: %s: %s.\n", msg, cudaGetErrorString(err) );
         exit(EXIT_FAILURE); 
     }
-}
-
-template <size_t blockSize, typename T>
-__device__ void warpReduce(volatile T *sdata, size_t tid)
-{
-    if (blockSize >= 64) sdata[tid] += sdata[tid + 32];
-    if (blockSize >= 32) sdata[tid] += sdata[tid + 16];
-    if (blockSize >= 16) sdata[tid] += sdata[tid +  8];
-    if (blockSize >=  8) sdata[tid] += sdata[tid +  4];
-    if (blockSize >=  4) sdata[tid] += sdata[tid +  2];
-    if (blockSize >=  2) sdata[tid] += sdata[tid +  1];
 }
 
 __global__ 
@@ -70,6 +60,7 @@ void initializeChromosomes(chromosome* chromosomes, int* weights, int numberOfIt
 
     for(int i = index; i < CHROMOSOME_COUNT; i += stride) {
         chromosomes[i].score = 0;
+        chromosomes[i].weight = 0;
         for (int j = 0, weight = 0; j < numberOfItems; j++) {
             int bit = curand(states[i]) % 2;
             if (bit == 1 && weight + weights[j] > capacity) {
@@ -82,6 +73,33 @@ void initializeChromosomes(chromosome* chromosomes, int* weights, int numberOfIt
     }
 }
 
+__global__
+void evaluteChromosomesGeneLevel(chromosome* chromosomes, int* scores, int* weights, int* values, int* gScores, int* gWeights, int numberOfItems, int capacity, int population) {
+    
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    int chromosomeIdx = index / numberOfItems;
+    int innerIndex = index % numberOfItems;
+
+    // lets just do an atomic add for each gene level
+    if (index < numberOfItems * population) {
+        gWeights[index] = chromosomes[chromosomeIdx].genes[innerIndex] * weights[innerIndex];
+        gScores[index] = chromosomes[chromosomeIdx].genes[innerIndex] * values[innerIndex];
+    }
+    __syncthreads();
+
+    // now we should go ahead and add each one to 
+    if (index < numberOfItems * population) {
+        atomicAdd(&chromosomes[chromosomeIdx].score, gScores[index]);
+        atomicAdd(&chromosomes[chromosomeIdx].weight, gWeights[index]);
+    }
+    __syncthreads();
+
+    // now we have a score and weight. Go through each chromosome, and change up score based on weight. We waste all the threads in dead blocks now
+    if (index < population) {
+        if (chromosomes[index].weight > capacity)
+            chromosomes[index].score= 1;
+    }
+}
 
 __global__
 void evaluateChromosomes(chromosome* chromosomes, int* weights, int* values, int numberOfItems, int capacity) {
@@ -201,10 +219,6 @@ void GPUreproduceChromosomes(chromosome* chromosomes, chromosome* offspring, int
     __syncthreads();
     for (int i = index; i < CHROMOSOME_COUNT; i+= stride) {
         chromosomes[i].score = offspring[i].score;
-
-        // for (int j = 0; j < numberOfItems; j++) {
-        //     chromosomes[i].genes[j] = offspring[i].genes[j];
-        // }
     }
 }
 
@@ -313,6 +327,11 @@ int main() {
         int* scores;
         cudaMallocManaged(&scores, num_chromosomes * sizeof(int));
 
+        int* gWeights;
+        int* gScores;
+        cudaMallocManaged(&gWeights, numberOfItems * num_chromosomes * sizeof(int));
+        cudaMallocManaged(&gScores, numberOfItems* num_chromosomes * sizeof(int));
+
         // we have a NUM_OF_CHROMOSOMES amount of chromosome structs, that each will have genes encoded
         // in binary, with 1 representing the presence of an item, 0 the lack of item.
         std::size_t size_of_chromosomes = num_chromosomes * sizeof(chromosome);
@@ -367,7 +386,8 @@ int main() {
                 copyOffspringIntoChromosomes<<<BlocksGeneSize,threadsPerBlock>>>(chromosomes, offspring, numberOfItems, num_chromosomes);
                 mutateChromosomes<<<BlocksGeneSize,threadsPerBlock>>>(chromosomes, numberOfItems, num_chromosomes);
             }
-            evaluateChromosomes<<<1, threadsPerBlock>>>(chromosomes, weights, values, numberOfItems, capacityOfKnapsack);
+            //evaluateChromosomes<<<1, threadsPerBlock>>>(chromosomes, weights, values, numberOfItems, capacityOfKnapsack);
+            evaluteChromosomesGeneLevel<<<BlocksGeneSize, threadsPerBlock>>>(chromosomes, scores, weights, values, gScores, gWeights, numberOfItems, capacityOfKnapsack, num_chromosomes);
             pullScores<<<1, threadsPerBlock>>>(chromosomes, scores);
             sumReducer<<<1, threadsPerBlock>>>(total, chromosomes, num_chromosomes);
             // cudaDeviceSynchronize();
@@ -395,6 +415,8 @@ int main() {
         std::cout<< "Duration for " << GENERATIONS << " : " << duration <<'\n';
 
         cudaFree(scores);
+        cudaFree(gWeights);
+        cudaFree(gScores);
         for (int i = 0; i < num_chromosomes; i++) {
             cudaFree(chromosomes[i].genes);
             cudaFree(offspring[i].genes);
