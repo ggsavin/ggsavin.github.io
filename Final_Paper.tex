@@ -95,11 +95,44 @@ Genetic Algorithms are very powerful metaheuristics that have been successfully 
 % ############################################################################
 \section{Introduction} \label{intro}
 % ############################################################################
+Evolutionary Algorithms mimic behaviors of living things to search for optimal solutions. Genetic Algorithms are a well known subset of EAs, and employ genetic operators such as crossover, mutation and selection to "evolve" new solutions in a solution space over many iterations (generations). Even with the main loop of GAs being domain independent, two main components end up being problem specific : encoding and evaluation. These components may dramatically increase execution time, especially when a lot of candidate solutions need to be evaluated every generation.
 
-Genetic algorithms are powerful metaheuristics that draw insipiration from evolutionary ideas. Through operations such as selection, cross-over and mutation, the solution space is "evolved" and more optimal results are found each iteration (generation). These algorithms are amenable to parallelization and indeed researchers have experimented with parallelizing everything from individual operators to the whole process. However, designing parallel algorithms can differ quite fundamentally given the underlying architecture. 
-Empirical and experimental researchers have predominantly been the drivers of GAs, mainly as optimization tools. 
-Only two main components for most GAs that are problem specific : encoding and evaluation.
-Financial pattern discovery, MAX-3SAT, layout problems, ML hyperparameter selection \cite{} are but a few of the problems GPU GAs have been used to solve.
+Thankfully, Genetic Algorithms are amenable to parallelization and indeed researchers have experimented with parallelizing everything from individual operators to the whole process. Different GA model schemes such as master-slave and island models have been parallelized, with more attention put on island models for their natural inclination towards distributed execution.
+
+
+Empirical and experimental researchers have predominantly been the drivers of GAs, mainly as optimization tools, however designing parallel algorithms can differ quite fundamentally given the underlying architecture. Implementations on the GPU have gained in popularity as each solution can be acted on independently for parts of the algorithm. However, researchers \cite{Van_Luong2010-mw}, myself included, have in some fashion found the cost of learning these parallelization techinques in tandem with GPU technologies to be painful.
+
+Nevertheless, many problems have been successfully solved with GAs such financial pattern discovery, MAX-3SAT, layout problems, and ML hyperparameter selection \cite{Shivram2019-il, Amin2022-xd} among many others.
+
+To best explore this topic and our implementation with the reader, the paper starts with a quick subsection on particulars of CUDA GPU programming. Section 2 is a literature review of all the work done in this space up to now, while Section 3 is our problem statement as to why master-slave models need to be revisited in light of the more recent island model dominance. Section 4 contains our proposed solution for our CPU and GPU implementations. In Section 5 we describe our positive findings and how we improved upon our initial GPU implementation. Finally Section 6 contains our conclusions and future work.
+
+\subsection{CUDA GPU Programming}
+Programming on a GPU requires your code to be ran at times on a separate device. NVIDIA provides CUDA\footnote{https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html}, a general purpose parallelization and programming model. We use the subsets on the C/C++ programming languge to run our GA on  the GPU.
+
+These NVIDIA GPUs consist of multiple streaming multiprocessors (SMs). When we define a kernel (the name of a function the host runs on the GPU), our blocks of threads get scheduled to run on these streaming multiprocessors. Each SM then executes these threads, with the lowest level of parallelism found at the \textit{warp} level. Warps are groupings of 32 threads. Threads on the same block can synchronize and also access shared memory. Blocks however cannot synchronize, and do not have any shared memory access and must rely on slower global memory.
+
+When it comes to memory access and best practices, we aim for warp level memory coalescing\footnote{https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html} of global memory, leading to less request transactions in tandem with memory access patterns such as interleaved addressing. We also need to avoid serialization of operations when attempting to retrieve data as the GPU distributes memory over banks. 
+
+Figure \ref{fig:gpu-info} highlights both the grid/block/thread structure as well as the different levels of memory available to our GPU programs.
+
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+  \centering
+  % include first image
+  \includegraphics[width=.8\linewidth]{Figures/grid_block_mem.png}  
+  \caption{Memory Allocation Levels}
+  \label{fig:mem-allocation}
+\end{subfigure}
+\begin{subfigure}{.5\textwidth}
+  \centering
+  % include second image
+  \includegraphics[width=.8\linewidth]{Figures/grid_block_thread.png}  
+  \caption{Thread, Block, Grid Distribution}
+  \label{fig:mutation}
+\end{subfigure}
+\caption{CUDA GPU Layout of Threads and Memory}
+\label{fig:cgpu-info}
+\end{figure}
 
 % ############################################################################
 \section{Literature Review} \label{litrev}
@@ -287,9 +320,10 @@ We tried various other memory representations in 2D to try and get around this l
 
 Not only is acceleration of Genetic Algorithms via GPUs faster than CPU implementations, a master-slave model is not too much technical overhead and will provide good speed-ups even in less than ideal implementations.
 
-The remainder of the time is then spent on tweaking the memory layout and actions done in threads to increase cache hits and reducing thread/warp divergence as much as possible. This not only takes away from the actual problem being solved, but is highly tied to the actual GPU hardware available. NVIDIA has shown no qualms with changing architecture, and very recently announced a new paradigm of shared memory across blocks, which is something that we were not able to leverage in our project.
+The remainder of the time is then spent on tweaking the memory layout and actions done in threads to increase cache hits and reducing thread/warp divergence as much as possible. This not only takes away from the actual problem being solved, but is highly tied to the actual GPU hardware available. NVIDIA has shown no qualms with changing architecture, and very recently announced a new paradigm of shared memory across blocks, which is something that we were not able to leverage in our project. Indeed, a GPU solution on a non NVIDIA GPU may look very different, and due to the painful learning process mentioned in the introduction, not many have ventured into this even less documented space.
 
 Sometimes, as we saw in this project, threads working on every gene at once is an obvious and ideal speed-up, but one that does not always work given the encoding and problem at hand. Island Models in contrast try to avoid this by having only as many chromosomes as they can fit in their definition of an island (usually a block \cite{Janssen2022-kr}, but people have tried this at the warp level as well \cite{Amin2022-xd}). Unfortunately, the smaller amount of chromosomes per island comes at a cost of overall solution quality.
+
 
 \subsection{Contributions}
 We showed that not only is GPU acceleration of GAs do-able, but the direct master-slave approach with some architectural provisions is less technical overhead than island models and provides tempting speed-ups. 
@@ -301,7 +335,7 @@ We could not find any implementations of the Island GPU papers, so attempting to
 
 No fine-tuning of grid and block sizes were done, so an extension looking at these and other possible parameters on the GPU would be good to get further speed-ups.
 
-We also did not have time to explore more dense encodings of our chromosomes, which could have been done at the bit level and stuffed into integers. This simple change would for sure speed up many kernels as masks could be used for the more laborious multi-step
+We also did not have time to explore more dense encodings of our chromosomes, which could have been done at the bit level and stuffed into integers. This simple change would for sure speed up many kernels as masks could then be used.
 
 Finally, more intricate Genetic Algorithm idea's could be implemented, and a focus more on quality of score rather than just speed would be the differentiating factor between algorithms.
 
