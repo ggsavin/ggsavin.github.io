@@ -125,8 +125,8 @@ Newer work tries to use warp granularity to represent each island and reduce thr
 \section{Problem Statement} \label{probstat}
 % ############################################################################
 Given the take-over of Island Models as the default model for genetic algorithms on the GPU, re-visiting the master-slave model last seen in \cite{Cavuoti2013-oy} is a worthwhile endeavor. It gives us the chance to contrast the differences of these approaches on new GPU architecture and to apply the CUDA design methodology ``Assess, Parallelize, Optimize, Deploy" (APOD) \cite{bradley_2012} while we improve our model. This re-exploration is the first we know of in almost a decade, and will show that the master-slave model is a worthy alternative, and arguably should be viewed as the default when first choosing to pursue a SIMT/SIMD  acceleration of a GA. 
-TODO : STill update this with the fact that we are doing this on the knapsack problem
-We also apply this to the binary 01 knapsack problem. It is an important combinatorial optimisation problem.
+
+We target the 01-binary knapsack problem as it has important applications in every day life, and proves to be a good benchmark.
 
 % ############################################################################
 \section{Proposed Solution} \label{propsol}
@@ -150,15 +150,15 @@ A benefit of the binary knapsack is that both the genotype and phenotype represe
 \end{figure}
 
 \subsection{Initialization}
-There are multiple ways to initialize chromosomes, and when we have a lot of items, it might make more sense to use a greedy approach, or some a priori information about the values and weights. For our own knapsack problem however, on the \textbf{CPU} we decided to use a bernoulli distribution and a mersenne twister pseudo-random generator to determine if a gene was 0 or 1. We also ensured that the total weight was not greater than the knapsack capacity by setting the remaining genes to 0 if this capacity would be crossed by a chromosome.
+There are multiple ways to initialize chromosomes, and when we have a lot of items, it might make more sense to use a greedy approach, or some a priori information about the values and weights. For our own knapsack problem however, on the CPU we decided to use a bernoulli distribution and a mersenne twister pseudo-random generator to determine if a gene was 0 or 1. We also ensured that the total weight was not greater than the knapsack capacity by setting the remaining genes to 0 if this capacity would be crossed by a chromosome.
 
-The \textbf{GPU} solution had to be slightly modified as none of these were readily available, and we had to rely on the NVIDIA cuRAND\footnote[1]{https://docs.nvidia.com/cuda/curand/index.html} library which used the \textit{XORWOW} generator. We also needed to split this step into two separate kernels \textit{initKernel} which sets a cuRAND handle for each chromosome, and the actual initialize kernel, \textit{initializeChromosomes} which sequentially iterated over genes and used a modulo to set either 0 or 1 values.
+The GPU solution had to be slightly modified as none of these were readily available, and we had to rely on the NVIDIA cuRAND\footnote[1]{https://docs.nvidia.com/cuda/curand/index.html} library which used the \textit{XORWOW} generator. We also needed to split this step into two separate kernels \textit{initKernel} which sets a cuRAND handle for each chromosome, and the actual initialize kernel, \textit{initializeChromosomes} which sequentially iterated over genes and used a modulo to set either 0 or 1 values.
 
 \subsection{Evaluation}
-The \textbf{CPU} solution iterated over each chromosome sequentially and stored each respective score in the associated struct. A score of 1 was given to any chromosome that went over knapsack capacity.
-The \textbf{GPU} evaluation was done in parallel on each chromosome in the  \textit{evaluateChromosome} kernel, and the same penalty of lowering the total score to 1 was applied. Existing reduction algorithms on the GPU (in our case to sum the scores of chromosomes) only used arrays of floats or ints, and not over structs, so we needed an additional \textit{pullScores} kernel to store this information into an array of scores that would then be reduced into a total sum by the \textit{reduce} kernel. This \textit{reduce} kernel was taken from the CUDA sample examples, and returned the summed result to the host.
+The CPU solution iterated over each chromosome sequentially and stored each respective score in the associated struct. A score of 1 was given to any chromosome that went over knapsack capacity. A running total, average and best score was kept throughout the loop.
+The GPU evaluation was done in parallel on each chromosome in the  \textit{evaluateChromosome} kernel, and the same penalty of lowering the total score to 1 was applied. Existing reduction algorithms on the GPU (in our case to sum the scores of chromosomes) only used arrays of floats or ints, and not over structs, so we needed an additional \textit{pullScores} kernel to store this information into an array of scores that would then be reduced into a total sum by the \textit{reduce} kernel. This \textit{reduce} kernel was taken from the CUDA sample examples, and returned the summed result to the host.
 
-A second improved GPU version leveraged a custom reduction we wrote did not need to pull scores down from the chromosome structs, and also did not move the total score back to the host. This was all done in a kernel called \textit{sumReducer}.
+A second improved GPU version leveraged a custom reduction we wrote and did not need to pull scores down from the chromosome structs. It also avoided moving the total score back to the host. This was all done in a kernel called \textit{sumReducer}.
 
 \subsection{Reproduction}
 Reproduction is really an overarching function that relies on selection of parent chromosomes, actual cross-over/reproduction of these parents, and mutation of the resulting offspring. These steps need to be done sequentially, and this restriction applies to the GPU implementation as well. Afterwards, all the offspring are copied into the original chromosome array. The more optimized GPU implementation moves this copy into its own kernel that works at the gene level rather than the chromosome level to squeeze out more throughput.
@@ -199,7 +199,7 @@ The creation of offspring via crossover can be done in many ways, but for this p
 Finally mutation is when a gene flips from 1 to 0, or 0 to 1. It usually has a very small probability of occurring, and in our case, we kept it at 0.001. The first GPU implementation does this in parallel at the chromosome level, whereas the second implementation does it at the thread gene level increasing throughput.
 
 \subsection{Experiments}
-Knapsack item lists of various sizes were used, along with varying population sizes to debug and test both CPU and GPU programs, however the final experiments were for a 50 item knapsack and a 1000 item knapsack. With these two sizes, population sizes ranging from 32 to 1024 were tested against all the CPU, 1st GPU implementation and post APOD 2nd GPU implementation.
+Knapsack item lists of various sizes were used, along with varying population sizes to debug and test both CPU and GPU programs, however the final experiments were for a 50 item knapsack and a 1000 item knapsack. With these two sizes, population sizes ranging from 32 to 1024 were tested against the CPU, 1st GPU implementation and post APOD 2nd GPU implementation.
 NIVIDIA Nsight systems\footnote{https://developer.nvidia.com/nsight-systems} was used to profile each GPU run.
 
 % ############################################################################
@@ -209,7 +209,6 @@ NIVIDIA Nsight systems\footnote{https://developer.nvidia.com/nsight-systems} was
 \subsection{Hardware}
 The CPU execution was done on an Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz, with 32GB of RAM. The GPU used was a 12GB RTX 3060 on a Carleton cloud VM.
 
-\subsection{Results}
 \begin{figure}[h]
     \centering
     \includegraphics[width=\linewidth]{Figures/cpu_gpu_runtimes.png}
@@ -217,43 +216,97 @@ The CPU execution was done on an Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz, with 
     \label{fig:runtime}
 \end{figure}
 
-\begin{table}[h]
-\centering
-\resizebox{\textwidth}{!}{%
+\subsection{Results}
+In Figure \ref{fig:runtime}, we can see at first glance that the second optimized GPU implementation is faster than the first one, and in fact, as population increases, also has a smaller gradient than the original GPU implementation. These linear increases are in contrast to the exponential rise of the CPU version, and indeed, both GPU solutions perform better than the CPU one. Near 1000 population size, the 2nd GPU implementation was 2.8x faster than the 1st GPU one, and 5.2x that of the CPU.
+
+Shared memory was only leveraged in the reductions, and we had to rely on global memory to avoid serialization and some cache misses. We also had to rely on global memory due to the size of our arrays and the limited space on the blocks and threads. Table \ref{tab:nsys} goes over the APOD changes that ended up working in our favor while improving the first GPU algorithm. The Reproduction kernel took up 91\% of the all kernel execution time, so our optimizations aimed at reducing this number as well as the total time. Table \ref{tab:second_nsys} shows the halving effect of pulling out mutation from a device function to its own global kernel where each threads main job was to determine if a bit needed to be flipped. This concept was also extended as seen in Table \ref{tab:third_nsys} to the copying of offspring back into the parent chromosomes for the next generation, and this also led  to another halving of the total reproduction function runtime. Taking these out did produce some additional kernel call overhead, but it was well worth it in our case.
+
+\begin{table}[]
+\begin{subtable}[t]{\textwidth}
 \begin{tabular}{@{}lllll@{}}
 \toprule
 Time (\%) & Total Time (ns) & Instances & Avg (ns)  & Name of Kernel          \\ \midrule
-83.1      & 920,536,735     & 5,994     & 153,576.4 & GPUreproduceChromosomes \\
-8.7       & 96,057,554      & 6,000     & 16,009.6  & evaluateChromosomes     \\
-6.5       & 71,702,476      & 6,000     & 11,950.4  & pullScores              \\
-1.4       & 15,998,624      & 6,000     & 2,666.4   & reduce                  \\
-0.2       & 2,320,024       & 6         & 386,670.7 & initializeChromosomes   \\
-0.1       & 1,613,520       & 6         & 268,920.0 & initKernel              \\ \bottomrule
-\end{tabular}%
-}
-\caption{nsys profile of a 1000 generation GPU run}
-\label{tab:gpu-profile}
+91.0      & 12,396,614,221     & 5,994     & 2,068,170.5 & GPUreproduceChromosomes \\
+8.7       & 1,183,193,740      & 6,000     & 197,199.0  & evaluateChromosomes     \\
+0.1       & 16,970,440      & 6,000     & 2,828.4  & sumReducer              \\
+0.1       & 14,235,215      & 6     & 2,372,535.8   & initializeChromosomes      \\
+0.1       & 12,529,457       & 6,000        & 2,088.2 & pullScores   \\
+0.0      & 1,758,771       & 6         & 293,128.5 & initKernel              \\ \bottomrule
+\end{tabular}
+\caption{First APOD pass, using the custom sumReducer kernel. This reduced memory slowdown moving from device to host back to device}
+\label{tab:first_nsys}
+\end{subtable}
+\newline
+\vspace*{1 cm}
+\newline
+\begin{subtable}[t]{\textwidth}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Time (\%) & Total Time (ns) & Instances & Avg (ns)  & Name of Kernel          \\ \midrule
+83.5      & 6,782,679,608     & 5,994     & 1,131,578.2  & GPUreproduceChromosomes \\
+14.9       & 1,209,217,233       & 6,000     & 201,536.2  & evaluateChromosomes     \\
+1.0       & 85,121,386       & 5,994     & 14,201.1   & mutateChromosomes     \\
+0.2       & 16,672,049      & 6,000     & 2,778.7  & sumReducer              \\
+0.2       & 13,412,805      & 6     & 2,235,467.5   & initializeChromosomes                  \\
+0.2       & 12,219,734       & 6,000        & 2,036.6 & pullScores   \\
+0.0       & 1,705,907       & 6         & 284,317.8 & initKernel              \\ \bottomrule
+\end{tabular}
+\caption{We pull out the mutateChromosome function into its own kernel that now acts on the gene level. This added throughput halves the runtime of the reproduce kernel while our new kernel's runtime is negligible}
+\label{tab:second_nsys}
+\end{subtable}
+\newline
+\vspace*{1 cm}
+\newline
+\begin{subtable}[t]{\textwidth}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Time (\%) & Total Time (ns) & Instances & Avg (ns)  & Name of Kernel          \\ \midrule
+70.0      & 3,313,793,979     & 5,994     & 552,851.8  & GPUreproduceChromosomes \\
+25.5       & 1,209,338,925       & 6,000     & 201,556.5  & evaluateChromosomes     \\
+1.8       & 85,082,093       & 5,994     & 14,194.5   & mutateChromosomes     \\
+1.7       & 82,532,905       & 5,994     & 13,769.3   & copyOffspringIntoChromosomes     \\
+0.4       & 17,049,045     & 6,000     & 2,841.5  & sumReducer              \\
+0.3       & 14,001,103      & 6     & 2,333,517.2   & initializeChromosomes                  \\
+0.3       & 12,340,733       & 6,000        & 2,056.8  & pullScores   \\
+0.0       & 1,717,651       & 6         & 286,275.2 & initKernel              \\ \bottomrule
+\end{tabular}
+\caption{The copying of offspring back into parent chromosomes can also be done at the gene level for maximal throughput. We can see doing this again halves the runtime of the Reproduce kernel, with negligible runtime for our new copyOffspring kernel}
+\label{tab:third_nsys}
+\end{subtable}
+\caption{APOD Improvement via NVIDIA Nsight profiling the 1000 item knapsack runs across 6 (32,64,128,256,512,1024) population sizes}
+\label{tab:nsys}
 \end{table}
 
-\begin{table}[]
-\begin{tabular}{@{}ll@{}}
-\toprule
-Call in Reproduction Kernel & Time (\%) \\ \midrule
-Roulette Selection          & 12.2     \\
-Crossover                   & 31.8     \\
-Mutation                    & 56       \\ \bottomrule
-\end{tabular}
-\caption{The three device functions representing the majority of the work done in the reproduction kernel}
-\label{tab:rep-kernel-breakdown}
-\end{table}
+Naively, we assumed that it would then be possible to run all kernels and threads at the gene level, but we quickly realized there was a lot more thread divergence and less memory coalescence. In addition, complications occur when chromosomes are spread across two separate CUDA blocks. We can no longer do reductions across these blocks without using atomics, and we also lose the ability to sync between threads in case we want to continue with the sequential nature of our algorithm. We attempted to work around this by using atomicity specifically for the threads of a chromosome that spanned two blocks, but this caused too much divergence and the runtime was not any better than what we had achieved in the 2nd GPU implementation.
+
+We tried various other memory representations in 2D to try and get around this limitation, but none of the runtimes improved in any significant way.
 
 % ############################################################################
 \section{Conclusions} \label{conc}
 % ############################################################################
 
+Not only is acceleration of Genetic Algorithms via GPUs faster than CPU implementations, a master-slave model is not too much technical overhead and will provide good speed-ups even in less than ideal implementations.
+
+The remainder of the time is then spent on tweaking the memory layout and actions done in threads to increase cache hits and reducing thread/warp divergence as much as possible. This not only takes away from the actual problem being solved, but is highly tied to the actual GPU hardware available. NVIDIA has shown no qualms with changing architecture, and very recently announced a new paradigm of shared memory across blocks, which is something that we were not able to leverage in our project.
+
+Sometimes, as we saw in this project, threads working on every gene at once is an obvious and ideal speed-up, but one that does not always work given the encoding and problem at hand. Island Models in contrast try to avoid this by having only as many chromosomes as they can fit in their definition of an island (usually a block \cite{Janssen2022-kr}, but people have tried this at the warp level as well \cite{Amin2022-xd}). Unfortunately, the smaller amount of chromosomes per island comes at a cost of overall solution quality.
+
+\subsection{Contributions}
+We showed that not only is GPU acceleration of GAs do-able, but the direct master-slave approach with some architectural provisions is less technical overhead than island models and provides tempting speed-ups. 
+
+We are also the first to walk through systematic changes between gene and chromosome level thread execution in our implementations, and show profiling results to support our decisions.
+
+\subsection{Future Ideas}
+We could not find any implementations of the Island GPU papers, so attempting to implement them and compare with our results would be interesting. Given the small and decreasing amount of chromosomes per island as the encodings get larger, we forsee less successful runs. However, newer variations of Island Models with the upcoming block group shared memory and synchronization would be worthy of exploration as there would be a new division of an island possible on GPUs.
+
+No fine-tuning of grid and block sizes were done, so an extension looking at these and other possible parameters on the GPU would be good to get further speed-ups.
+
+We also did not have time to explore more dense encodings of our chromosomes, which could have been done at the bit level and stuffed into integers. This simple change would for sure speed up many kernels as masks could be used for the more laborious multi-step
+
+Finally, more intricate Genetic Algorithm idea's could be implemented, and a focus more on quality of score rather than just speed would be the differentiating factor between algorithms.
 
 
-Trying to run threads against each gene is the obvious speedup, however due to the nature of encodings and the GPU architeccture, it leads to having chromosomes split across blocks, which do not share memory and would lead to serious memory hits.
+
 % ############################################################################
 % Bibliography
 % ############################################################################
